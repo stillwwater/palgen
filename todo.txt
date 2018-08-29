@@ -1,5 +1,4 @@
-- Handle user input
-- Change displayed palette at runtime
+- Display current palette name
 - Specify fixed size for palette rectangles
 - Change input files
 - Hotload or refresh modified files

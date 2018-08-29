@@ -88,7 +88,8 @@ void load_palettes_from_file(char *filename) {
         }
     }
 
-    palette_count = p_length;
+    palette_count = p_length + 1;
+
     free(reader.buffer);
     fclose(fp);
 }

@@ -23,6 +23,8 @@ typedef struct {
     char *buffer;
 } Reader;
 
+i32 palette_count;
+
 Palette load_palette(i32 pal);
 void load_palettes_from_file(char *filename);
 void free_palettes();

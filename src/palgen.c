@@ -93,6 +93,7 @@ void draw_window(HDC device_context, RECT *window_rect, i32 x, i32 y, i32 width,
 
 LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam) {
     LRESULT result = 0;
+
     switch (message) {
         case WM_ACTIVATEAPP: {
             break;
@@ -121,6 +122,42 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
 
             draw_window(device_context, &client_rect, x, y, width, height);
             EndPaint(window_handle, &paint);
+            break;
+        }
+
+        case WM_SYSKEYDOWN:
+        case WM_KEYDOWN: {
+            u32 vk_key = wparam;
+
+            RECT client_rect;
+            GetClientRect(window_handle, &client_rect);
+            i32 width  = client_rect.right - client_rect.left;
+            i32 height = client_rect.bottom - client_rect.top;
+
+            switch (vk_key) {
+                case VK_LEFT: {
+                    palette_index--;
+
+                    if (palette_index < 0) {
+                        palette_index = palette_count - 1;
+                    }
+
+                    init_DIB(width, height);
+                    InvalidateRect(window_handle, &client_rect, 0);
+                    break;
+                }
+                case VK_RIGHT: {
+                    palette_index++;
+
+                    if (palette_index >= palette_count) {
+                        palette_index = 0;
+                    }
+
+                    init_DIB(width, height);
+                    InvalidateRect(window_handle, &client_rect, 0);
+                    break;
+                }
+            }
             break;
         }
 
