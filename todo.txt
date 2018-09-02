@@ -1,3 +1,2 @@
-- Specify fixed size for palette rectangles
 - Change input files
 - Hotload or refresh modified files

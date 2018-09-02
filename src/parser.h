@@ -18,12 +18,18 @@ typedef struct {
 } Palette;
 
 typedef struct {
+    i32 width;
+    i32 height;
+} Texture;
+
+typedef struct {
     FILE *fp;
     size_t size;
     char *buffer;
 } Reader;
 
 i32 palette_count;
+Texture texture;
 
 Palette load_palette(i32 pal);
 void load_palettes_from_file(char *filename);

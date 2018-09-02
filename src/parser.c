@@ -9,9 +9,13 @@
 
 Palette *palettes;
 i32 palette_count;
+Texture texture;
 
 Palette load_palette(i32 pal) {
     if (!palettes) {
+        texture.width  = 512;
+        texture.height = 512;
+
         // Default palette
         palettes = VirtualAlloc(0, sizeof(Palette), MEM_COMMIT, PAGE_READWRITE);
 
@@ -41,7 +45,7 @@ void load_palettes_from_file(char *filename) {
 
     reader.fp = fp;
 
-    size_t p_length = -1;
+    i32 p_length = -1;
     size_t p_color_index = 0;
 
     if (palettes) {
@@ -73,10 +77,21 @@ void load_palettes_from_file(char *filename) {
              palettes[p_length].colors[p_color_index] = strtol(++token, 0, 16);
              p_color_index++;
         } else if (isnumber(token)) {
+            i32 token_int = atoi(token);
+
+            if (p_length < 0) {
+                if (texture.width <= 0) {
+                    texture.width = token_int;
+                } else {
+                    texture.height = token_int;
+                }
+                continue;
+            }
+
             if (palettes[p_length].nrows == -1) {
-                palettes[p_length].nrows = atoi(token);
+                palettes[p_length].nrows = token_int;
             } else {
-                palettes[p_length].ncols = atoi(token);
+                palettes[p_length].ncols = token_int;
             }
         } else {
             p_length++;
@@ -89,6 +104,14 @@ void load_palettes_from_file(char *filename) {
     }
 
     palette_count = p_length + 1;
+
+    if (texture.width <= 0) {
+        texture.width = 512;
+    }
+
+    if (texture.height <= 0) {
+        texture.height = texture.width;
+    }
 
     free(reader.buffer);
     fclose(fp);
