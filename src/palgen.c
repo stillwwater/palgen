@@ -144,6 +144,7 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
 
                     init_DIB(width, height);
                     InvalidateRect(window_handle, &client_rect, 0);
+                    SetWindowTextA(window_handle, load_palette(palette_index).name);
                     break;
                 }
                 case VK_RIGHT: {
@@ -155,6 +156,7 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
 
                     init_DIB(width, height);
                     InvalidateRect(window_handle, &client_rect, 0);
+                    SetWindowTextA(window_handle, load_palette(palette_index).name);
                     break;
                 }
             }
@@ -190,7 +192,7 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd, int
     HWND window_handle = CreateWindowEx(
         0,
         window_class.lpszClassName,
-        "PALGEN",
+        load_palette(palette_index).name,
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
