@@ -56,7 +56,7 @@ void render_palette() {
     }
 }
 
-void init_DIB(i32 width, i32 height) {
+void init_DIB(HWND window_handle, i32 width, i32 height) {
     if (back_buffer.bitmap) {
         VirtualFree(back_buffer.bitmap, 0, MEM_RELEASE);
     }
@@ -74,21 +74,38 @@ void init_DIB(i32 width, i32 height) {
     i32 bitmap_size = (width * height) * PIXEL_SIZE;
     back_buffer.bitmap = VirtualAlloc(0, bitmap_size, MEM_COMMIT, PAGE_READWRITE);
     render_palette();
+
+    char *palette_name = load_palette(palette_index).name;
+    char *name_buffer  = malloc(strlen(palette_name) + 16);
+
+    sprintf(name_buffer, "%s (W: %d H: %d)", palette_name, width, height);
+    SetWindowTextA(window_handle, name_buffer);
 }
 
-void draw_window(HDC device_context, RECT *window_rect, i32 x, i32 y, i32 width, i32 height) {
-    i32 window_width  = window_rect->right - window_rect->left;
-    i32 window_height = window_rect->bottom - window_rect->top;
-
+void draw_window(HDC device_context, RECT *window_rect, i32 width, i32 height) {
     StretchDIBits(
         device_context,
-        0, 0, window_width, window_height,
+        0, 0, width, height,
         0, 0, back_buffer.width, back_buffer.height,
         back_buffer.bitmap,
         &back_buffer.bitmap_info,
         DIB_RGB_COLORS,
         SRCCOPY
     );
+}
+
+void redraw_window(HWND window_handle, RECT *client_rect) {
+    i32 width  = client_rect->right - client_rect->left;
+    i32 height = client_rect->bottom - client_rect->top;
+
+    init_DIB(window_handle, width, height);
+    InvalidateRect(window_handle, client_rect, 0);
+}
+
+void resize_window(HWND window_handle, RECT *client_rect, RECT *window_rect) {
+    i32 x_off = (window_rect->right - window_rect->left) - client_rect->right;
+    i32 y_off = (window_rect->bottom - window_rect->top) - client_rect->bottom;
+    SetWindowPos(window_handle, 0, 0, 0, texture.width + x_off, texture.height + y_off, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -98,41 +115,37 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
         case WM_ACTIVATEAPP: {
             break;
         }
-
         case WM_SIZE: {
             RECT client_rect;
             GetClientRect(window_handle, &client_rect);
+
             i32 width  = client_rect.right - client_rect.left;
             i32 height = client_rect.bottom - client_rect.top;
-            init_DIB(width, height);
+
+            init_DIB(window_handle, width, height);
             break;
         }
-
         case WM_PAINT: {
             PAINTSTRUCT paint;
-            RECT client_rect;
+            RECT client_rect, window_rect;
             GetClientRect(window_handle, &client_rect);
 
             HDC device_context = BeginPaint(window_handle, &paint);
 
-            i32 x = paint.rcPaint.left;
-            i32 y = paint.rcPaint.top;
             i32 width  = paint.rcPaint.right - paint.rcPaint.left;
             i32 height = paint.rcPaint.bottom - paint.rcPaint.top;
 
-            draw_window(device_context, &client_rect, x, y, width, height);
+            draw_window(device_context, &client_rect, width, height);
             EndPaint(window_handle, &paint);
             break;
         }
-
         case WM_SYSKEYDOWN:
         case WM_KEYDOWN: {
             u32 vk_key = wparam;
 
-            RECT client_rect;
+            RECT client_rect, window_rect;
             GetClientRect(window_handle, &client_rect);
-            i32 width  = client_rect.right - client_rect.left;
-            i32 height = client_rect.bottom - client_rect.top;
+            GetWindowRect(window_handle, &window_rect);
 
             switch (vk_key) {
                 case VK_LEFT: {
@@ -142,9 +155,7 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
                         palette_index = palette_count - 1;
                     }
 
-                    init_DIB(width, height);
-                    InvalidateRect(window_handle, &client_rect, 0);
-                    SetWindowTextA(window_handle, load_palette(palette_index).name);
+                    redraw_window(window_handle, &client_rect);
                     break;
                 }
                 case VK_RIGHT: {
@@ -154,21 +165,17 @@ LRESULT CALLBACK window_callback(HWND window_handle, UINT message, WPARAM wparam
                         palette_index = 0;
                     }
 
-                    init_DIB(width, height);
-                    InvalidateRect(window_handle, &client_rect, 0);
-                    SetWindowTextA(window_handle, load_palette(palette_index).name);
+                    redraw_window(window_handle, &client_rect);
                     break;
                 }
             }
             break;
         }
-
         case WM_CLOSE:
         case WM_DESTROY: {
             running = false;
             break;
         }
-
         default: {
             result = DefWindowProc(window_handle, message, wparam, lparam);
             break;
@@ -203,6 +210,12 @@ int CALLBACK WinMain(HINSTANCE instance, HINSTANCE prev_instance, LPSTR cmd, int
         instance,
         0
     );
+
+    RECT client_rect, window_rect;
+    GetClientRect(window_handle, &client_rect);
+    GetWindowRect(window_handle, &window_rect);
+
+    resize_window(window_handle, &client_rect, &window_rect);
 
     if (window_handle) {
         MSG message;

@@ -54,6 +54,9 @@ void load_palettes_from_file(char *filename) {
 
     palettes = VirtualAlloc(0, MAX_PALETTES * sizeof(Palette), MEM_COMMIT, PAGE_READWRITE);
 
+    texture.width  = 0;
+    texture.height = 0;
+
     while (token = eat_token(&reader, &buffer_length)) {
         if (token[0] == 0) {
             continue;
